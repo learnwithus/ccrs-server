@@ -10,12 +10,12 @@
         return $d;
     }
     header('Access-Control-Allow-Origin: *');
+    require "config.php";
     $list_sessions = array();
-
-    $conn = mysql_connect('localhost', 'nomonke1_park', '123...Park')
+    $conn = mysql_connect($host, $username, $password)
         or die("Unable to connect to MySQL");
 
-    $selected = mysql_select_db('nomonke1_ccrs', $conn)
+    $selected = mysql_select_db($db_name, $conn)
         or die("Could not select CCRS db");
 
     if (isset($_POST["user"]) && isset($_POST["session"])) {
