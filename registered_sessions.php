@@ -14,15 +14,15 @@
         or die("Could not select CCRS db");
 
     if (isset($_GET["user"])) {
-        $result = mssql_query("EXEC CCRSQA.dbo.GetRegisteredCourses @UserId = " . $_GET["user"]);
+        $result = mssql_query("EXEC CCRSQA.dbo.GetRegisteredSessions @UserId = " . $_GET["user"]);
         
         while ($row = mssql_fetch_assoc($result)) {
-            array_unshift($list_courses, $row);
+            array_push($list_courses, $row);
         }
 
         echo json_encode($list_courses);
     } else {
-        echo "No user ID supplied";
+        echo "No user supplied";
     }
 ?>
 
