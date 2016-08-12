@@ -14,7 +14,7 @@
         or die("Could not select CCRS db");
 
     if (isset($_GET["user"])) {
-        $result = mssql_query("EXEC CCRSQA.dbo.GetRegisteredCourses @UserId = " . $_GET["user"]);
+        $result = mssql_query("EXEC CCRS.dbo.GetRegisteredCourses @UserId = " . $_GET["user"]);
         
         while ($row = mssql_fetch_assoc($result)) {
             array_unshift($list_courses, $row);

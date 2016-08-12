@@ -12,7 +12,7 @@
         or die("Could not select CCRS db");
     
     if (isset($_GET["id"])) {
-        $q = "SELECT CourseID, Title, CourseType, Description, CourseLength, Fee FROM tblCourses WHERE CourseID = " . $_GET["id"];
+        $q = "SELECT CourseID, Title, CourseType, Description, CourseLength, Fee, Registration FROM tblCourses WHERE CourseID = " . $_GET["id"];
         $row = mssql_query($q);
         
         $course = mssql_fetch_assoc($row);
