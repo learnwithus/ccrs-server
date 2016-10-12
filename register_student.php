@@ -54,82 +54,85 @@
         $result = mssql_query($q);
         $manager_info = mssql_fetch_assoc($result);
 
-        $mailer = new PHPMailer();
-    
-        $mailer->isSMTP();
-        $mailer->Host = "207.34.128.233";
-        
-        $mailer->setFrom("learnwithus@vch.ca", "learnwithus@vch.ca");
-        $mailer->Subject = 'CCRS - Confirmation';
-
         $username = $course_info['FirstName'] . ' ' . $course_info['LastName'];
-        $datetime = explode(" ", $course_info['StartDate']);
-        $date = $datetime[0] . ' ' . $datetime[1] . ', ' . $datetime[2];
-        $fulltime = explode(":", $datetime[3]);
-        $time = $fulltime[0] . ':' . $fulltime[1] . substr($fulltime[3], 3);
+        $email = $course_info['Email'];
+        $read_datetime = explode(" ", $course_info['StartDate']);
+        $read_date = $read_datetime[0] . ' ' . $read_datetime[1] . ', ' . $read_datetime[2];
+        $fulltime = explode(":", $read_datetime[3]);
+        $read_time = $fulltime[0] . ':' . $fulltime[1] . substr($fulltime[3], 3);
         $title = $course_info['Title'];
         $location = $course_info['Location'];
         $manager = $manager_info['FirstName'] . ' ' . $manager_info['LastName'];
         $manager_email = $manager_info['Email'];
-/*
-        $mailer->Body = 
-    'Dear ' . $username . ',
 
-Your registration is confirmed for the following course: 
-    <table>
-        <tr>
-            <td>Course Title:</td>
-            <td>' . $title . '</td>
-        </tr>
-        <tr>
-            <td>Date:</td>
-            <td>' . $date . '</td>
-        </tr>
-        <tr>
-            <td>Time:</td>
-            <td>' . $time . '</td>
-        </tr>
-        <tr>
-            <td>Location:</td>
-            <td>' . $location . '</td>
-        </tr>
-        <tr>
-            <td>Course Manager:</td>
-            <td>' . $manager . '</td>
-        </tr>
-        <tr>
-            <td>Email:</td>
-            <td>' . $manager_email . '</td>
-        </tr>
-    </table>
+        $datetime = strtotime($course_info['StartDate']);
+        $date = date('Ymd', $datetime);
+        $time = date('His', $datetime);
+        $end_datetime = strtotime($course_info['EndDate']);
+        $end_date = date('Ymd', $end_datetime);
+        $end_time = date('His', $end_datetime);
+		$event_id = $course_info['CourseID'];
+		$sequence = 0;
+		$status = 'CONFIRMED';
 
-You can reschedule or cancel course registration yourself up to 48 hours before the course start by logging into http://ccrs.vch.ca.
-Please contact the course manager if it is less than 48 hours before the course start date. 
-    ';
-*/
-    $mailer->Body = 
+		$mail = new PHPMailer();
+		$mail->isSMTP();
+		$mail->Host = "207.34.128.233";
+		$mail->setFrom("learnwithus@vch.ca", "learnwithus@vch.ca");
+		$mail->addAddress($email,'User');
+		$mail->Subject = "CCRS - Confirmation";
+		$mail->addCustomHeader('MIME-version',"1.0"); 
+	    $mail->addCustomHeader('Content-type',"text/calendar; name=event.ics; method=REQUEST; charset=UTF-8;"); 
+	    $mail->addCustomHeader('Content-type',"text/html; charset=UTF-8"); 
+	    $mail->addCustomHeader('Content-Transfer-Encoding',"7bit"); 
+	    $mail->addCustomHeader('X-Mailer',"Microsoft Office Outlook 12.0"); 
+	    $mail->addCustomHeader("Content-class: urn:content-classes:calendarmessage");
+
+		$ical = "BEGIN:VCALENDAR\r\n";
+		$ical .= "VERSION:2.0\r\n";
+		$ical .= "PRODID:-//YourCassavaLtd//EateriesDept//EN\r\n";
+		$ical .= "METHOD:REQUEST\r\n";
+		$ical .= "BEGIN:VEVENT\r\n";
+		$ical .= "ORGANIZER;SENT-BY=\"MAILTO:learnwithus@vch.ca\":MAILTO:learnwithus@vch.ca\r\n";
+		// $ical .= "ATTENDEE=".$email.";CN=;ROLE=REQ-PARTICIPANT;PARTSTAT=ACCEPTED;RSVP=TRUE:mailto:learnwithus@vch.ca\r\n";
+		$ical .= "UID:".strtoupper(md5($event_id))."\r\n";
+		$ical .= "SEQUENCE:".$sequence."\r\n";
+		$ical .= "STATUS:".$status."\r\n";
+		$ical .= "DTSTAMPTZID=America/Los_Angeles:".date('Ymd').'T'.date('His')."\r\n";
+		$ical .= "DTSTART:".$date."T".$time."\r\n";
+		$ical .= "DTEND:".$end_date."T".$end_time."\r\n";
+		$ical .= "LOCATION:".$location."\r\n";
+		$ical .= "SUMMARY:".$course_info['Title']."\r\n";
+		$ical .= "DESCRIPTION:".$course_info['Description']."\r\n";
+		$ical .= "BEGIN:VALARM\r\n";
+		$ical .= "TRIGGER:-PT15M\r\n";
+		$ical .= "ACTION:DISPLAY\r\n";
+		$ical .= "DESCRIPTION:Reminder\r\n";
+		$ical .= "END:VALARM\r\n";
+		$ical .= "END:VEVENT\r\n";
+		$ical .= "END:VCALENDAR\r\n";
+
+    $mail->Body = 
     "Dear " . $username . ",\n
-
 Your registration is confirmed for the following course:\n
-
-Course Title: " . $title . "\n
-Date: " . $date . "\n
-Time: " . $time . "\n
+Course Title: " . $title . "
+Date: " . $read_date . "
+Time: " . $read_time . "
 Location: " . $location . "\n
-Course Manager: " . $manager . "\n
+Course Manager: " . $manager . "
 Email: " . $manager_email . "\n
-
+To add your registered course to your outlook calendar, please double click the CCRS Calendar Entry attachment.
 You can reschedule or cancel course registration yourself up to 48 hours before the course start by logging into http://ccrs.vch.ca.
 Please contact the course manager if it is less than 48 hours before the course start date. 
     ";
+		$mail->AddStringAttachment($ical, "CCRS_Calendar_Entry.ics", "7bit", "text/calendar; charset=utf-8; method=REQUEST");
 
-    $mailer->addAddress($course_info['Email'], "User");
-    
-    if (!$mailer->Send())
-        echo $mailer->ErrorInfo;
-    else
-        echo "Sent";
-
+		//send the message, check for errors
+		if (!$mail->send()) {
+			echo $mail->ErrorInfo;
+		} else {
+			echo "Message sent!";
+		}
     } else {
         echo "No data supplied: " . $postdata["user"] . " " . $postdata["session"] . " " . $postdata["course"];
     }
